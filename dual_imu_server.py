@@ -81,8 +81,16 @@ def handle_imu(connection, client_address, hand, event_dict):
         # Open a file to save the data
         timestamp_str = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"data/imu_{hand}_{timestamp_str}.csv"
-        with open(filename, 'w') as file:
-            file.write("sync_flag,IMU_stopwatch,GX,GY,GZ,AX,AY,AZ,timestamp\n")
+        fixed_filename = f"Data/IMU_{hand}_data.csv"
+        
+        # Create Data directory if it doesn't exist
+        os.makedirs("Data", exist_ok=True)
+        
+        with open(filename, 'w') as file, open(fixed_filename, 'w') as fixed_file:
+            # Write headers to both files
+            header = "sync_flag,IMU_stopwatch,GX,GY,GZ,AX,AY,AZ,timestamp\n"
+            file.write(header)
+            fixed_file.write(header)
             
             # Wait for start event
             log(f"Waiting for start signal", hand)
@@ -115,10 +123,26 @@ def handle_imu(connection, client_address, hand, event_dict):
                                 break
                             
                             log(f'Data point {count+1}: {data}', hand)
-                            file.write(f"{data},{time.time()}\n")
-                            file.flush()  # Ensure data is written immediately
-                            count += 1
-                            points_since_check += 1
+                            
+                            # Get current timestamp for this data point
+                            current_timestamp = time.time()
+                            
+                            # Validate data format and ensure it has all fields
+                            data_parts = data.split(',')
+                            if len(data_parts) >= 7:  # Make sure we have the expected fields (sync_flag + 6 IMU values)
+                                # Write data to both files with timestamp
+                                data_line = f"{data},{current_timestamp}\n"
+                                file.write(data_line)
+                                fixed_file.write(data_line)
+                                
+                                # Ensure data is written immediately to both files
+                                file.flush()
+                                fixed_file.flush()
+                                
+                                count += 1
+                                points_since_check += 1
+                            else:
+                                log(f"Skipping malformed data: {data}", hand)
                             
                             # Calculate and display data rate every 20 points
                             if count % 20 == 0:

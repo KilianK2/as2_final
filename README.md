@@ -4,7 +4,7 @@ This project uses data from two IMUs to predict if a person is hammering, sawing
 
 ## Project Structure
 
-- **Data/**: Data collection and processing
+- **Data/**: Data collection and processing (**Place Dataset here**)
 - **Prediction/**: ML models for activity recognition
 - **Visualization/**: Data visualization components
 

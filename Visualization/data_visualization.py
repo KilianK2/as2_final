@@ -252,8 +252,8 @@ class DataVisualizer:
 
 def main():
     """Main function to run the visualization pipeline"""
-    # Default file is test_x.csv, but this can be changed to any CSV file
-    file_path = 'test_x.csv'
+    # Update file path to point to Data/test_x.csv
+    file_path = 'Data/test_x.csv'
     
     # Check if file exists
     if not os.path.exists(file_path):

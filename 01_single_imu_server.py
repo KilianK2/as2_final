@@ -16,15 +16,6 @@ fig = None
 axes = []
 lines = {}
 data_buffers = {
-    'L': {
-        'time': deque(maxlen=500),
-        'GX': deque(maxlen=500),
-        'GY': deque(maxlen=500),
-        'GZ': deque(maxlen=500),
-        'AX': deque(maxlen=500),
-        'AY': deque(maxlen=500),
-        'AZ': deque(maxlen=500)
-    },
     'R': {
         'time': deque(maxlen=500),
         'GX': deque(maxlen=500),
@@ -93,15 +84,13 @@ def setup_visualization():
     # Set the style for better visualization
     plt.style.use('dark_background')
     
-    # Create a figure with 2 subplots (Gyroscope, Accelerometer) and 2 columns (L and R)
-    fig, axes = plt.subplots(2, 2, figsize=(14, 8), sharex='col')
-    fig.suptitle('Real-time IMU Data Stream', fontsize=16)
+    # Create a figure with 2 subplots (Gyroscope, Accelerometer)
+    fig, axes = plt.subplots(2, 1, figsize=(14, 8))
+    fig.suptitle('Real-time IMU Data Stream (Right Hand)', fontsize=16)
     
-    # Set column titles
-    axes[0, 0].set_title('Left Hand (L) - Gyroscope', fontsize=14)
-    axes[0, 1].set_title('Right Hand (R) - Gyroscope', fontsize=14)
-    axes[1, 0].set_title('Left Hand (L) - Accelerometer', fontsize=14)
-    axes[1, 1].set_title('Right Hand (R) - Accelerometer', fontsize=14)
+    # Set titles
+    axes[0].set_title('Right Hand (R) - Gyroscope', fontsize=14)
+    axes[1].set_title('Right Hand (R) - Accelerometer', fontsize=14)
     
     # Data keys for each type of sensor
     gyro_keys = ['GX', 'GY', 'GZ']
@@ -117,41 +106,38 @@ def setup_visualization():
         'AZ': '#3357FF'   # Z - Blue
     }
     
-    # Initialize empty lines for each sensor and hand
-    lines = {}
-    for hand_idx, hand in enumerate(['L', 'R']):
-        lines[hand] = {}
-        
-        # Gyroscope lines
-        for key in gyro_keys:
-            line, = axes[0, hand_idx].plot([], [], lw=1.5, color=colors[key], label=key)
-            lines[hand][key] = line
-        
-        # Accelerometer lines
-        for key in accel_keys:
-            line, = axes[1, hand_idx].plot([], [], lw=1.5, color=colors[key], label=key)
-            lines[hand][key] = line
-        
-        # Add legends
-        axes[0, hand_idx].legend(loc='upper right')
-        axes[1, hand_idx].legend(loc='upper right')
-        
-        # Add grids for better readability
-        for row in range(2):
-            axes[row, hand_idx].grid(True, linestyle='--', alpha=0.6)
-            axes[row, hand_idx].set_facecolor('#121212')  # Dark background
-            
-        # Set initial y-limits
-        axes[0, hand_idx].set_ylim(-100, 100)  # Gyroscope
-        axes[1, hand_idx].set_ylim(-2, 2)      # Accelerometer
+    # Initialize empty lines for each sensor
+    lines = {'R': {}}
     
-    # Set common x-label for the bottom plots
-    axes[1, 0].set_xlabel('Time (seconds)')
-    axes[1, 1].set_xlabel('Time (seconds)')
+    # Gyroscope lines
+    for key in gyro_keys:
+        line, = axes[0].plot([], [], lw=1.5, color=colors[key], label=key)
+        lines['R'][key] = line
+    
+    # Accelerometer lines
+    for key in accel_keys:
+        line, = axes[1].plot([], [], lw=1.5, color=colors[key], label=key)
+        lines['R'][key] = line
+    
+    # Add legends
+    axes[0].legend(loc='upper right')
+    axes[1].legend(loc='upper right')
+    
+    # Add grids for better readability
+    for row in range(2):
+        axes[row].grid(True, linestyle='--', alpha=0.6)
+        axes[row].set_facecolor('#121212')  # Dark background
+        
+    # Set initial y-limits
+    axes[0].set_ylim(-100, 100)  # Gyroscope
+    axes[1].set_ylim(-2, 2)      # Accelerometer
+    
+    # Set common x-label for the bottom plot
+    axes[1].set_xlabel('Time (seconds)')
     
     # Set common y-labels
-    axes[0, 0].set_ylabel('Angular Velocity (°/s)')
-    axes[1, 0].set_ylabel('Acceleration (g)')
+    axes[0].set_ylabel('Angular Velocity (°/s)')
+    axes[1].set_ylabel('Acceleration (g)')
     
     # Adjust layout
     plt.tight_layout()
@@ -165,7 +151,7 @@ def setup_visualization():
     return fig, axes
 
 # Function to add data to the visualization buffers
-def add_to_visualization(hand, timestamp, data_parts):
+def add_to_visualization(timestamp, data_parts):
     global data_buffers, data_lock
     
     # Extract the data values
@@ -196,25 +182,25 @@ def add_to_visualization(hand, timestamp, data_parts):
         # Use a lock to prevent race conditions when updating the data buffers
         with data_lock:
             # Add relative timestamp (seconds since start)
-            if not data_buffers[hand]['time']:
+            if not data_buffers['R']['time']:
                 # If this is the first data point, set the reference time
-                data_buffers[hand]['time'].append(0)
+                data_buffers['R']['time'].append(0)
             else:
                 # Calculate seconds since first data point
-                elapsed = timestamp - data_buffers[hand]['first_timestamp']
-                data_buffers[hand]['time'].append(elapsed)
+                elapsed = timestamp - data_buffers['R']['first_timestamp']
+                data_buffers['R']['time'].append(elapsed)
             
             # Store the first timestamp if not already set
-            if 'first_timestamp' not in data_buffers[hand]:
-                data_buffers[hand]['first_timestamp'] = timestamp
+            if 'first_timestamp' not in data_buffers['R']:
+                data_buffers['R']['first_timestamp'] = timestamp
                 
             # Add the sensor data
-            data_buffers[hand]['GX'].append(gx)
-            data_buffers[hand]['GY'].append(gy)
-            data_buffers[hand]['GZ'].append(gz)
-            data_buffers[hand]['AX'].append(ax)
-            data_buffers[hand]['AY'].append(ay)
-            data_buffers[hand]['AZ'].append(az)
+            data_buffers['R']['GX'].append(gx)
+            data_buffers['R']['GY'].append(gy)
+            data_buffers['R']['GZ'].append(gz)
+            data_buffers['R']['AX'].append(ax)
+            data_buffers['R']['AY'].append(ay)
+            data_buffers['R']['AZ'].append(az)
     except (IndexError, ValueError) as e:
         # If there's an error parsing the data, log it but don't crash
         log(f"Error adding data to visualization: {e}")
@@ -227,62 +213,59 @@ def update_visualization():
         return
     
     with data_lock:
-        for hand in ['L', 'R']:
-            if data_buffers[hand]['time']:  # Only update if there's data
-                hand_idx = 0 if hand == 'L' else 1
+        if data_buffers['R']['time']:  # Only update if there's data
+            # Get time data
+            times = list(data_buffers['R']['time'])
+            if not times:
+                return
                 
-                # Get time data
-                times = list(data_buffers[hand]['time'])
-                if not times:
-                    continue
-                    
-                # Update gyroscope data (row 0)
-                for key in ['GX', 'GY', 'GZ']:
-                    values = list(data_buffers[hand][key])
-                    if values:
-                        # Update the line data
-                        lines[hand][key].set_data(times, values)
-                
-                # Update accelerometer data (row 1)
-                for key in ['AX', 'AY', 'AZ']:
-                    values = list(data_buffers[hand][key])
-                    if values:
-                        # Update the line data
-                        lines[hand][key].set_data(times, values)
-                
-                # Automatically adjust x-axis limits for both rows
-                for row in range(2):
-                    # Update x-axis limits to show all data with some padding
-                    max_time = max(times)
-                    min_time = max(min(times), max_time - 10)  # Show last 10 seconds or all data
-                    axes[row, hand_idx].set_xlim(min_time, max_time + 0.5)
-                
-                # Dynamically adjust y-axis limits for better visualization
-                # Gyroscope row
-                gyro_data = []
-                for key in ['GX', 'GY', 'GZ']:
-                    if data_buffers[hand][key]:
-                        recent_values = list(data_buffers[hand][key])[-30:]  # Last 30 points
-                        gyro_data.extend(recent_values)
-                
-                if gyro_data:
-                    min_val = min(gyro_data)
-                    max_val = max(gyro_data)
-                    margin = max(5, (max_val - min_val) * 0.1)
-                    axes[0, hand_idx].set_ylim(min_val - margin, max_val + margin)
-                
-                # Accelerometer row
-                accel_data = []
-                for key in ['AX', 'AY', 'AZ']:
-                    if data_buffers[hand][key]:
-                        recent_values = list(data_buffers[hand][key])[-30:]  # Last 30 points
-                        accel_data.extend(recent_values)
-                
-                if accel_data:
-                    min_val = min(accel_data)
-                    max_val = max(accel_data)
-                    margin = max(0.1, (max_val - min_val) * 0.1)
-                    axes[1, hand_idx].set_ylim(min_val - margin, max_val + margin)
+            # Update gyroscope data (row 0)
+            for key in ['GX', 'GY', 'GZ']:
+                values = list(data_buffers['R'][key])
+                if values:
+                    # Update the line data
+                    lines['R'][key].set_data(times, values)
+            
+            # Update accelerometer data (row 1)
+            for key in ['AX', 'AY', 'AZ']:
+                values = list(data_buffers['R'][key])
+                if values:
+                    # Update the line data
+                    lines['R'][key].set_data(times, values)
+            
+            # Automatically adjust x-axis limits for both rows
+            for row in range(2):
+                # Update x-axis limits to show all data with some padding
+                max_time = max(times)
+                min_time = max(min(times), max_time - 10)  # Show last 10 seconds or all data
+                axes[row].set_xlim(min_time, max_time + 0.5)
+            
+            # Dynamically adjust y-axis limits for better visualization
+            # Gyroscope row
+            gyro_data = []
+            for key in ['GX', 'GY', 'GZ']:
+                if data_buffers['R'][key]:
+                    recent_values = list(data_buffers['R'][key])[-30:]  # Last 30 points
+                    gyro_data.extend(recent_values)
+            
+            if gyro_data:
+                min_val = min(gyro_data)
+                max_val = max(gyro_data)
+                margin = max(5, (max_val - min_val) * 0.1)
+                axes[0].set_ylim(min_val - margin, max_val + margin)
+            
+            # Accelerometer row
+            accel_data = []
+            for key in ['AX', 'AY', 'AZ']:
+                if data_buffers['R'][key]:
+                    recent_values = list(data_buffers['R'][key])[-30:]  # Last 30 points
+                    accel_data.extend(recent_values)
+            
+            if accel_data:
+                min_val = min(accel_data)
+                max_val = max(accel_data)
+                margin = max(0.1, (max_val - min_val) * 0.1)
+                axes[1].set_ylim(min_val - margin, max_val + margin)
     
     # Draw the updated plot
     try:
@@ -293,7 +276,7 @@ def update_visualization():
         log(f"Visualization update error: {e}")
 
 # Helper function to process a single data point
-def process_data_point(data, hand, timestamp, output_file, visualization_active):
+def process_data_point(data, timestamp, output_file, visualization_active):
     """Process a single data point and return True if successful, False otherwise"""
     try:
         data_parts = data.split(',')
@@ -313,23 +296,24 @@ def process_data_point(data, hand, timestamp, output_file, visualization_active)
             
             # Add data to visualization if active
             if visualization_active:
-                add_to_visualization(hand, timestamp, data_parts)
+                add_to_visualization(timestamp, data_parts)
                 
             return True
         else:
-            log(f"Skipping malformed data point: {data}", hand)
+            log(f"Skipping malformed data point: {data}", 'R')
             return False
     except ValueError:
-        log(f"Skipping non-numeric data point: {data}", hand)
+        log(f"Skipping non-numeric data point: {data}", 'R')
         return False
     except Exception as e:
-        log(f"Error processing data point: {data}, Error: {e}", hand)
+        log(f"Error processing data point: {data}, Error: {e}", 'R')
         return False
 
-# Thread to handle a single IMU device
-def handle_imu(connection, client_address, hand, event_dict):
-    """Handle a single IMU device connection"""
-    log(f"Starting handler for {hand} hand", hand)
+# Thread to handle the IMU device
+def handle_imu(connection, client_address, event_dict):
+    """Handle the IMU device connection"""
+    hand = 'R'  # We're only working with the Right hand
+    log(f"Starting handler for Right hand", hand)
     
     # Set TCP_NODELAY to disable Nagle's algorithm for better real-time performance
     connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -351,17 +335,19 @@ def handle_imu(connection, client_address, hand, event_dict):
         os.makedirs(data_path, exist_ok=True)
         
         # Open a file to save the data
-        fixed_filename = f"{data_path}/IMU_{hand}_data.csv"
+        fixed_filename = f"{data_path}/IMU_R_data.csv"
         
         with open(fixed_filename, 'w') as fixed_file:
-            # Write headers to the file - removing sync_flag and IMU_stopwatch
+            # Write headers to the file
             header = "GX,GY,GZ,AX,AY,AZ,timestamp\n"
             fixed_file.write(header)
             
+            # Signal that this IMU is ready
+            log(f"Device ready, waiting for start signal", hand)
+            event_dict['ready_event'].set()
+            
             # Wait for start event
-            log(f"Waiting for start signal", hand)
-            event_dict['ready_events'][hand].set()  # Signal that this IMU is ready
-            event_dict['start_event'].wait()  # Wait for main thread to signal start
+            event_dict['start_event'].wait()
             
             # Send start command
             log('Sending start command "S\\n"...', hand)
@@ -403,8 +389,9 @@ def handle_imu(connection, client_address, hand, event_dict):
                                 log(f"Split {len(data_points)} concatenated data points", hand)
                                 
                                 # Process each data point separately
+                                current_timestamp = time.time()
                                 for dp in data_points:
-                                    process_data_point(dp, hand, current_timestamp, fixed_file, visualization_active)
+                                    process_data_point(dp, current_timestamp, fixed_file, visualization_active)
                                     count += 1
                                     points_since_check += 1
                                 
@@ -428,7 +415,7 @@ def handle_imu(connection, client_address, hand, event_dict):
                                 current_timestamp = time.time()
                                 
                                 # Process this single data point
-                                if process_data_point(data, hand, current_timestamp, fixed_file, visualization_active):
+                                if process_data_point(data, current_timestamp, fixed_file, visualization_active):
                                     count += 1
                                     points_since_check += 1
                                     
@@ -467,8 +454,8 @@ def handle_imu(connection, client_address, hand, event_dict):
                 log(f"Error during data collection: {e}", hand)
             
             # Record the data count
-            event_dict['data_counts'][hand] = count
-            event_dict['filenames'][hand] = fixed_filename
+            event_dict['data_count'] = count
+            event_dict['filename'] = fixed_filename
             
             log(f'Received {count} data points, saved to {fixed_filename}', hand)
             
@@ -499,7 +486,7 @@ def handle_imu(connection, client_address, hand, event_dict):
         stop_keepalive.set()
         
         # Signal completion
-        event_dict['done_events'][hand].set()
+        event_dict['done_event'].set()
         
         # Close connection
         try:
@@ -507,7 +494,7 @@ def handle_imu(connection, client_address, hand, event_dict):
         except:
             pass
         
-        log(f"Handler for {hand} hand completed", hand)
+        log(f"Handler for Right hand completed", hand)
 
 # Add this function near the top, after imports
 def get_network_info():
@@ -575,7 +562,7 @@ def run_server():
         folder_name = "default"
     
     # Create the data path
-    data_path = f"data/{folder_name}"
+    data_path = f"02_data/{folder_name}"
     os.makedirs(data_path, exist_ok=True)
     
     log(f"Data will be saved to: {data_path}")
@@ -621,8 +608,8 @@ def run_server():
         except Exception as e:
             log(f"Error getting all IP addresses: {e}")
         
-        log("Make sure both M5StickC Plus devices are configured with this IP address")
-        log("If devices cannot connect, try using one of the IP addresses listed above")
+        log("Make sure the M5StickC Plus device is configured with this IP address")
+        log("If device cannot connect, try using one of the IP addresses listed above")
     except:
         log("Could not determine local IP address")
 
@@ -637,81 +624,52 @@ def run_server():
         return
 
     # Listen for incoming connections
-    server_socket.listen(2)  # Allow up to 2 connections
+    server_socket.listen(1)  # Allow only 1 connection
     server_socket.settimeout(300)  # 5 minute timeout for accepting connections
 
     # Initialize shared events
     event_dict = {
         'start_event': threading.Event(),  # Signal to start data collection
         'stop_event': threading.Event(),   # Signal to stop data collection
-        'ready_events': {                 # Signal when each hand is ready
-            'L': threading.Event(),
-            'R': threading.Event()
-        },
-        'done_events': {                  # Signal when each hand is done
-            'L': threading.Event(),
-            'R': threading.Event()
-        },
-        'data_counts': {                  # Store data counts
-            'L': 0,
-            'R': 0
-        },
-        'filenames': {                    # Store filenames
-            'L': "",
-            'R': ""
-        },
-        'data_path': data_path            # Path to save data
+        'ready_event': threading.Event(),  # Signal when the device is ready
+        'done_event': threading.Event(),   # Signal when the device is done
+        'data_count': 0,                   # Store data count
+        'filename': "",                    # Store filename
+        'data_path': data_path             # Path to save data
     }
 
-    # Dictionary to store connections
-    connections = {}
-    threads = {}
+    # Variable to store the connection
+    connection = None
+    client_address = None
+    imu_thread = None
     
     try:
-        log('Waiting for two M5StickC Plus devices to connect (L and R)...')
-        log('Make sure both M5StickC Plus devices are:')
+        log('Waiting for the M5StickC Plus device (Right hand / R) to connect...')
+        log('Make sure the M5StickC Plus device is:')
         log('1. Powered on')
-        log('2. Connected to the same WiFi network (S24)')
+        log('2. Connected to the same WiFi network')
         log('3. Configured with the correct server IP and port')
-        log('4. One configured with HAND="L" and one with HAND="R"')
+        log('4. Configured with HAND="R"')
         
         # Add more debug information about the waiting state
-        log('Server is now listening on port 5005 - waiting for connections...')
-        log('Press Ctrl+C to stop the server if devices do not connect')
+        log('Server is now listening on port 5005 - waiting for connection...')
+        log('Press Ctrl+C to stop the server if the device does not connect')
         
-        # Add support for reconnection
-        max_wait_time = 300  # 5 minutes total to wait for both devices
+        # Accept connection from the IMU
+        device_connected = False
+        
+        max_wait_time = 300  # 5 minutes total to wait for the device
         start_wait_time = time.time()
-        allow_reconnect = True  # Allow device reconnection if they disconnect during setup
         
-        # Accept connections from both IMUs
-        connected_devices = 0
-        
-        while connected_devices < 2 and not event_dict['stop_event'].is_set():
+        while not device_connected and not event_dict['stop_event'].is_set():
             # Check if we've waited too long
             if time.time() - start_wait_time > max_wait_time:
                 log('Maximum wait time exceeded. Giving up on connection attempts.')
                 break
                 
-            # Check if any previously connected devices dropped out
-            if allow_reconnect:
-                for hand in list(connections.keys()):
-                    try:
-                        # Try to send an empty message to check connection
-                        connections[hand]['connection'].sendall(b"")
-                    except:
-                        # Connection lost, remove it and decrement count
-                        log(f'Lost connection to device {hand}. Allowing reconnection.')
-                        try:
-                            connections[hand]['connection'].close()
-                        except:
-                            pass
-                        del connections[hand]
-                        connected_devices -= 1
-            
             try:
                 # Accept connection with timeout
-                log('Waiting for next connection attempt... (timeout: 10 seconds)')
+                log('Waiting for connection... (timeout: 10 seconds)')
                 server_socket.settimeout(10)  # Increased timeout for more reliable connections
                 connection, client_address = server_socket.accept()
                 log(f'Connection from {client_address}')
@@ -723,30 +681,22 @@ def run_server():
                     hand = connection.recv(128).decode('utf-8').strip()  # Increased buffer size
                     log(f'Received identifier data: "{hand}"')
                     
-                    # More robust handling of identifiers
-                    if 'L' in hand:
-                        hand = 'L'
-                        log(f'Interpreted as Left hand (L)')
-                    elif 'R' in hand:
-                        hand = 'R'
-                        log(f'Interpreted as Right hand (R)')
+                    # Check if this is the Right hand device
+                    if 'R' in hand:
+                        log('Confirmed as Right hand (R) device')
+                        device_connected = True
+                        
+                        # Start the handler thread
+                        imu_thread = threading.Thread(
+                            target=handle_imu, 
+                            args=(connection, client_address, event_dict)
+                        )
+                        imu_thread.daemon = True
+                        imu_thread.start()
                     else:
-                        log(f'Unrecognized hand identifier: {hand}')
-                    
-                    if hand in ['L', 'R'] and hand not in connections:
-                        connections[hand] = {
-                            'connection': connection,
-                            'address': client_address
-                        }
-                        connected_devices += 1
-                        log(f'Device {hand} registered successfully ({connected_devices}/2 devices)')
-                    else:
-                        if hand in connections:
-                            log(f'Warning: Duplicate hand identifier {hand}. Rejecting connection.')
-                            connection.close()
-                        else:
-                            log(f'Warning: Invalid hand identifier "{hand}". Expecting "L" or "R". Rejecting connection.')
-                            connection.close()
+                        log(f'Warning: Not a Right hand device. Received: "{hand}". Rejecting connection.')
+                        connection.close()
+                        connection = None
                 except socket.timeout:
                     log(f'Timeout waiting for hand identifier from {client_address}')
                     # Try sending a request for identifier
@@ -757,36 +707,30 @@ def run_server():
                         hand = connection.recv(128).decode('utf-8').strip()
                         log(f'Received identifier after prompting: "{hand}"')
                         
-                        # Process identifier same as above
-                        if 'L' in hand:
-                            hand = 'L'
-                        elif 'R' in hand:
-                            hand = 'R'
-                        else:
-                            log(f'Unrecognized hand identifier after prompting: {hand}')
-                            connection.close()
-                            continue
+                        # Check if this is the Right hand device
+                        if 'R' in hand:
+                            log('Confirmed as Right hand (R) device after prompting')
+                            device_connected = True
                             
-                        if hand in ['L', 'R'] and hand not in connections:
-                            connections[hand] = {
-                                'connection': connection,
-                                'address': client_address
-                            }
-                            connected_devices += 1
-                            log(f'Device {hand} registered after prompting ({connected_devices}/2 devices)')
+                            # Start the handler thread
+                            imu_thread = threading.Thread(
+                                target=handle_imu, 
+                                args=(connection, client_address, event_dict)
+                            )
+                            imu_thread.daemon = True
+                            imu_thread.start()
                         else:
-                            if hand in connections:
-                                log(f'Warning: Duplicate hand identifier {hand} after prompting. Rejecting connection.')
-                                connection.close()
-                            else:
-                                log(f'Warning: Invalid hand identifier after prompting. Expecting "L" or "R". Rejecting connection.')
-                                connection.close()
+                            log(f'Warning: Not a Right hand device after prompting. Received: "{hand}". Rejecting connection.')
+                            connection.close()
+                            connection = None
                     except Exception as e:
                         log(f'Failed to get identifier after prompting: {e}')
                         connection.close()
+                        connection = None
                 except Exception as e:
                     log(f'Error reading hand identifier: {e}')
                     connection.close()
+                    connection = None
                     
                 # Update visualization if active
                 if visualization_active:
@@ -796,46 +740,40 @@ def run_server():
                         log(f"Visualization update error: {e}")
             
             except socket.timeout:
-                log('Still waiting for connections...')
-                log(f'Connected {connected_devices}/2 devices. Listening for more...')
+                log('Still waiting for connection...')
             except Exception as e:
                 log(f'Error accepting connection: {e}')
 
-        # If both devices are connected, start data collection threads
-        if connected_devices == 2:
-            log('Both devices (L and R) connected successfully!')
+        # If device is connected, wait for it to be ready
+        if device_connected:
+            log('Right hand (R) device connected successfully!')
             
-            # Start threads for handling each device
-            for hand, conn_info in connections.items():
-                threads[hand] = threading.Thread(
-                    target=handle_imu, 
-                    args=(conn_info['connection'], conn_info['address'], hand, event_dict)
-                )
-                threads[hand].daemon = True
-                threads[hand].start()
-            
-            # Wait for both devices to be ready
-            log('Waiting for both devices to be ready...')
+            # Wait for device to be ready
+            log('Waiting for device to be ready...')
             ready_timeout = 30
             start_wait = time.time()
             
-            while not (event_dict['ready_events']['L'].is_set() and 
-                      event_dict['ready_events']['R'].is_set()):
+            while not event_dict['ready_event'].is_set():
                 if (time.time() - start_wait) > ready_timeout:
-                    log('Timeout waiting for devices to be ready')
+                    log('Timeout waiting for device to be ready')
                     event_dict['stop_event'].set()
                     break
                 time.sleep(0.1)
             
             if not event_dict['stop_event'].is_set():
-                # Both devices are ready, ask user to start data collection
-                input("Press ENTER to start data collection from both devices...")
+                # Device is ready, ask user to start data collection
+                input("Press ENTER to start data collection...")
                 
                 # Signal start
-                log('Starting data collection on both devices...')
+                log('Starting data collection...')
                 event_dict['start_event'].set()
                 
-                # Wait for user to stop data collection
+                # Set data collection timer for 180 seconds (3 minutes)
+                collection_start_time = time.time()
+                collection_timeout = 180  # 3 minutes in seconds
+                log(f'Data collection will automatically stop after {collection_timeout} seconds')
+                
+                # Wait for user to stop data collection or timeout
                 try:
                     while not event_dict['stop_event'].is_set():
                         # Update visualization
@@ -844,7 +782,19 @@ def run_server():
                         
                         # Check if Enter was pressed (non-blocking)
                         if msvcrt.kbhit() and msvcrt.getch() in [b'\r', b'\n']:
+                            log('Data collection stopped by user')
                             break
+                        
+                        # Check if timeout reached
+                        elapsed_time = time.time() - collection_start_time
+                        if elapsed_time >= collection_timeout:
+                            log(f'Reached maximum collection time of {collection_timeout} seconds')
+                            break
+                            
+                        # Print time remaining every 30 seconds
+                        if int(elapsed_time) % 30 == 0 and int(elapsed_time) > 0:
+                            time_remaining = collection_timeout - elapsed_time
+                            log(f'Time remaining: {time_remaining:.0f} seconds')
                         
                         # Short sleep to avoid excessive CPU usage
                         time.sleep(0.1)
@@ -855,20 +805,19 @@ def run_server():
                 log('Stopping data collection...')
                 event_dict['stop_event'].set()
                 
-                # Wait for both threads to complete
+                # Wait for thread to complete
                 max_wait = 10  # seconds
                 start_wait = time.time()
                 
-                while not (event_dict['done_events']['L'].is_set() and 
-                          event_dict['done_events']['R'].is_set()):
+                while not event_dict['done_event'].is_set():
                     if (time.time() - start_wait) > max_wait:
-                        log('Timeout waiting for devices to complete')
+                        log('Timeout waiting for device to complete')
                         break
                     time.sleep(0.1)
                 
-                # Wait for threads to finish
-                for hand, thread in threads.items():
-                    thread.join(timeout=2)
+                # Wait for thread to finish
+                if imu_thread:
+                    imu_thread.join(timeout=2)
                 
                 # Keep visualization open until user presses Enter if it's active
                 if visualization_active:
@@ -891,15 +840,15 @@ def run_server():
                     plt.close(fig)
             
         else:
-            log('Failed to connect both devices within the timeout period')
+            log('Failed to connect to Right hand device within the timeout period')
             
     except KeyboardInterrupt:
         log('Server interrupted by user')
     finally:
-        # Clean up all connections
-        for hand, conn_info in connections.items():
+        # Clean up the connection
+        if connection:
             try:
-                conn_info['connection'].close()
+                connection.close()
             except:
                 pass
         
@@ -908,11 +857,10 @@ def run_server():
         log('Server closed')
         
         # Display summary if data was collected
-        for hand in ['L', 'R']:
-            if event_dict['data_counts'][hand] > 0:
-                log(f"\nData Summary for {hand} hand:")
-                log(f"- Collected {event_dict['data_counts'][hand]} data points")
-                log(f"- Data saved to {event_dict['filenames'][hand]}")
+        if event_dict['data_count'] > 0:
+            log("\nData Summary for Right hand (R):")
+            log(f"- Collected {event_dict['data_count']} data points")
+            log(f"- Data saved to {event_dict['filename']}")
         
         log(f"\nAll data saved to folder: {event_dict['data_path']}")
         log("\nNext step: Use this data for your activity recognition project")
@@ -925,6 +873,6 @@ def run_server():
                 pass
 
 if __name__ == "__main__":
-    log("Dual IMU Data Collection Server")
-    log("This server connects to two M5StickC Plus devices (L and R) simultaneously")
+    log("Single IMU Data Collection Server (Right Hand Only)")
+    log("This server connects to a single M5StickC Plus device (Right hand / R)")
     run_server() 

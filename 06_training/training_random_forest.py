@@ -127,9 +127,10 @@ def evaluate_model(model, X_test, y_test, class_names=None):
     plt.ylabel('True')
     plt.title('Confusion Matrix')
     
-    # Save confusion matrix plot
-    os.makedirs('results', exist_ok=True)
-    plt.savefig('results/confusion_matrix.png')
+    # Save confusion matrix plot (using model-specific results folder)
+    results_folder = os.path.join('results', 'random_forest')
+    os.makedirs(results_folder, exist_ok=True)
+    plt.savefig(os.path.join(results_folder, 'confusion_matrix.png'))
     plt.close()
     
     # Feature importance
@@ -148,11 +149,11 @@ def evaluate_model(model, X_test, y_test, class_names=None):
         sns.barplot(x='Importance', y='Feature', data=feature_importances.head(20))
         plt.title('Feature Importances')
         plt.tight_layout()
-        plt.savefig('results/feature_importances.png')
+        plt.savefig(os.path.join(results_folder, 'feature_importances.png'))
         plt.close()
         
         # Save feature importances to CSV
-        feature_importances.to_csv('results/feature_importances.csv', index=False)
+        feature_importances.to_csv(os.path.join(results_folder, 'feature_importances.csv'), index=False)
 
 def save_model(model, output_path):
     """Save the trained model to disk"""
@@ -231,24 +232,26 @@ def main():
     class_names = list(np.unique(y_train))
     evaluate_model(best_model, X_test_scaled, y_test, class_names)
     
-    # Create results directory if it doesn't exist
-    os.makedirs('results', exist_ok=True)
+    # Create model-specific results directory
+    results_folder = os.path.join('results', 'random_forest')
+    os.makedirs(results_folder, exist_ok=True)
     
     # Save model
-    model_output_path = 'results/random_forest_model.joblib'
+    model_output_path = os.path.join(results_folder, 'model.joblib')
     save_model(best_model, model_output_path)
     
     # Save scaler for future predictions
-    scaler_output_path = 'results/standard_scaler.joblib'
+    scaler_output_path = os.path.join(results_folder, 'standard_scaler.joblib')
     joblib.dump(scaler, scaler_output_path)
     print(f"Scaler saved to {scaler_output_path}")
     
     # Save hyperparameters
-    with open('results/hyperparameters.txt', 'w') as f:
+    with open(os.path.join(results_folder, 'hyperparameters.txt'), 'w') as f:
         for param, value in best_params.items():
             f.write(f"{param}: {value}\n")
     
     print("\nRandom Forest training and evaluation completed successfully!")
+    print(f"All results saved to {os.path.abspath(results_folder)}")
 
 if __name__ == "__main__":
     main()

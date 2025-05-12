@@ -1,5 +1,5 @@
-bootstrap: True
+bootstrap: False
 max_depth: None
-min_samples_leaf: 2
-min_samples_split: 5
-n_estimators: 200
+min_samples_leaf: 4
+min_samples_split: 2
+n_estimators: 100

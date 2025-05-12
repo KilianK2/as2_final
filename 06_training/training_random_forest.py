@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV, cross_val_score, GroupKFold
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
@@ -193,6 +194,23 @@ def main():
         # Perform session-aware train-test split
         X_train, X_test, y_train, y_test = session_aware_train_test_split(data, test_size=0.3, random_state=42)
     
+    # Apply normalization using StandardScaler
+    print("Applying StandardScaler normalization to features...")
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # Convert back to DataFrame to maintain column names for feature importance visualization
+    X_train_scaled = pd.DataFrame(X_train_scaled, columns=X_train.columns, index=X_train.index)
+    X_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns, index=X_test.index)
+    
+    # Calculate statistics on the normalized data (fix the numpy std issue by specifying axis)
+    mean_first_features = np.mean(X_train_scaled.iloc[:, :5].values)
+    std_first_features = np.std(X_train_scaled.iloc[:, :5].values, axis=0).mean()
+    
+    print(f"Features normalized. Mean of first 5 features: {mean_first_features:.5f}")
+    print(f"Standard deviation of first 5 features: {std_first_features:.5f}")
+    
     # Get session IDs for group-based cross-validation
     # Extract session IDs from the training data
     groups_train = X_train.index.get_level_values('session_id') if 'session_id' in X_train.index.names else None
@@ -201,21 +219,29 @@ def main():
     if groups_train is None and hasattr(X_train, 'session_id'):
         groups_train = X_train['session_id'].values
     
-    # Train model with hyperparameter tuning
+    # Train model with hyperparameter tuning - now using normalized data
     best_model, best_params = train_random_forest_with_cv(
-        X_train, y_train, 
+        X_train_scaled, y_train, 
         groups_train=groups_train,  # Use session IDs for GroupKFold
         cv=5, 
         random_state=42
     )
     
-    # Evaluate model
+    # Evaluate model using normalized test data
     class_names = list(np.unique(y_train))
-    evaluate_model(best_model, X_test, y_test, class_names)
+    evaluate_model(best_model, X_test_scaled, y_test, class_names)
+    
+    # Create results directory if it doesn't exist
+    os.makedirs('results', exist_ok=True)
     
     # Save model
     model_output_path = 'results/random_forest_model.joblib'
     save_model(best_model, model_output_path)
+    
+    # Save scaler for future predictions
+    scaler_output_path = 'results/standard_scaler.joblib'
+    joblib.dump(scaler, scaler_output_path)
+    print(f"Scaler saved to {scaler_output_path}")
     
     # Save hyperparameters
     with open('results/hyperparameters.txt', 'w') as f:

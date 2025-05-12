@@ -98,7 +98,7 @@ def extract_features(window_data):
         # Default to 50Hz if we can't calculate
         sample_rate = 50.0
     
-    # 1-5. Basic statistical features (already implemented)
+    # 1-5. Basic statistical features
     # Calculate features for gyroscope data
     for i, axis in enumerate(['X', 'Y', 'Z']):
         gyro_data = window_data[gyro_cols[i]].values

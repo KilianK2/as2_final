@@ -1,0 +1,9 @@
+input_size: 76
+hidden_size: 128
+num_layers: 2
+dropout: 0.3
+batch_size: 32
+optimizer: Adam
+learning_rate: 0.001
+weight_decay: 1e-5
+test_accuracy: 0.8030

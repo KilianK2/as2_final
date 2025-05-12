@@ -770,7 +770,7 @@ def run_server():
                 
                 # Set data collection timer for 180 seconds (3 minutes)
                 collection_start_time = time.time()
-                collection_timeout = 180  # 3 minutes in seconds
+                collection_timeout = 80  # 3 minutes in seconds
                 log(f'Data collection will automatically stop after {collection_timeout} seconds')
                 
                 # Wait for user to stop data collection or timeout

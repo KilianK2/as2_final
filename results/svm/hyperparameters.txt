@@ -1,0 +1,4 @@
+test_accuracy: 0.8246
+C: 100
+class_weight: None
+gamma: 0.001
